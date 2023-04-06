@@ -169,8 +169,7 @@ const DayCloudy = styled(DayCloudyIcon)`
   flex-basis: 30%;
 `
 
-const AUTHORIZATION_KEY = 'CWB-47EA4267-8CFE-4100-B086-B09835724C3F';
-const LOCATION_NAME = '臺北'; //STEP 1 : 定義LOCATION_NAME
+
 
 function App() {
   // 元件一開始加入 console.log
@@ -179,21 +178,25 @@ function App() {
   const [currentTheme, setCurrentTheme] = useState('dark');
 
   // 定義會使用到的資料狀態
-  const [currentWeather, setCurrentWeather] = useState({
-    locationName: '臺北市',
-    description: '多雲時晴',
-    temperature: '22.9',
-    windSpeed: '1.1',
-    rainPossibility: '48,3',
-    observationTime: '2020-12-12 22:10:00',
+  const [weatherElement, setWeatherElement] = useState({
+    locationName: '',
+    description: '',
+    temperature: 0,
+    windSpeed: 0,
+    rainPossibility: 0,
+    observationTime: new Date(),
     isLoading: true,
+    comfortability: '',
+    weatherCode: 0,
   });
 
+  const AUTHORIZATION_KEY = 'CWB-47EA4267-8CFE-4100-B086-B09835724C3F';
+  const LOCATION_NAME = '臺北'; //STEP 1 : 定義LOCATION_NAME
 
   //STEP 2 : 將 AUTHORIZATION_KEY 和 LOCATION_NAME 帶入 API 請求中
   const fetchCurrentWeather = () => {
 
-    setCurrentWeather((prevState) => ({
+    setWeatherElement((prevState) => ({
       ...prevState,
       isLoading: true,
     }));
@@ -220,17 +223,53 @@ function App() {
         );
 
         // STEP 3：要使用到 React 組件中的資料
-        setCurrentWeather({
+        setWeatherElement((prevState) => ({
+          ...prevState,
           locationName: locationData.locationName,
-          description: '多雲時晴',
+          // description: '多雲時晴',
           temperature: weatherElements.TEMP,
           windSpeed: weatherElements.WDSD,
-          rainPossibility: '48,3',
+          // rainPossibility: '48,3',
           observationTime: locationData.time.obsTime,
           isLoading: false,
-        });
+        }));
       });
   }
+
+
+  const LOCATION_NAME_FORECAST = '臺北市';
+
+  const fetchWeatherForecast = () => {
+    fetch(
+      `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME_FORECAST}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        // 取出某縣市的預報資料
+        const locationData = data.records.location[0];
+
+        const weatherElements = locationData.weatherElement.reduce(
+          (neededElements, item) => {
+            // 只保留需要用到的「天氣現象」、「降雨機率」和「舒適度」
+            if (['Wx', 'PoP', 'CI'].includes(item.elementName)) {
+              // 這支 API 會回傳未來 36 小時的資料，這裡只需要取出最近 12 小時的資料，因此使用 item.time[0]
+              neededElements[item.elementName] = item.time[0].parameter;
+            }
+            return neededElements;
+          },
+          {}
+        );
+        // 要使用到 React 組件中的資料
+        setWeatherElement((prevState) => ({
+          ...prevState,
+          description: weatherElements.Wx.parameterName,
+          weatherCode: weatherElements.Wx.parameterValue,
+          rainPossibility: weatherElements.PoP.parameterName,
+          comfortability: weatherElements.CI.parameterName,
+        }));
+      });
+  }
+
 
 
   // function a (){
@@ -242,6 +281,7 @@ function App() {
     // useEffect 中加入 console.log
     console.log('execute function in useEffect');
     fetchCurrentWeather();
+    fetchWeatherForecast();
   }, []);
 
   const {
@@ -252,7 +292,8 @@ function App() {
     rainPossibility,
     observationTime,
     isLoading,
-  } = currentWeather;
+    comfortability,
+  } = weatherElement;
 
   return (
     <ThemeProvider theme={theme[currentTheme]}>
@@ -263,7 +304,9 @@ function App() {
 
         <WeatherCard>
           <Location>{locationName}</Location>
-          <Description>{description}</Description>
+          <Description>
+            {description} {comfortability}
+          </Description>
           <CurrentWeather>
             <Temperature>
               {Math.round(temperature)}<Celsius>°C</Celsius>
@@ -277,7 +320,10 @@ function App() {
             <RainIcon />{rainPossibility}%
           </Rain>
           {/* STEP 3 : 綁定 onClick 時會呼叫的 handleClick 方法 */}
-          <Refresh onClick={fetchCurrentWeather}
+          <Refresh onClick={() => {
+            fetchCurrentWeather();
+            fetchWeatherForecast();
+          }}
             isLoading={isLoading}>
             最後觀測時間：
 
