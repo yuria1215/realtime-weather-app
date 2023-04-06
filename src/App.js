@@ -10,6 +10,7 @@ import { ReactComponent as DayCloudyIcon } from './images/day-cloudy.svg';
 import { ReactComponent as AirFlowIcon } from './images/airFlow.svg';
 import { ReactComponent as RainIcon } from './images/rain.svg';
 import { ReactComponent as RefreshIcon } from './images/refresh.svg';
+import { ReactComponent as LoadingIcon } from './images/loading.svg';
 
 const theme = {
   light: {
@@ -140,11 +141,27 @@ const Refresh = styled.div`
   align-items: flex-end;
   color: ${({ theme }) => theme.textColor};
 
+  /* STEP 1：定義旋轉的動畫效果，並取名為 rotate */
+  @keyframes rotate {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
   svg {
     width: 15px;
     height: 15px;
     margin-left: 10px;
     cursor: pointer;
+
+    /* STEP 2：使用 rotate 動畫效果在 svg 圖示上 */
+    animation: rotate infinite 1.5s linear;
+
+    /* STEP 3：isLoading 的時候才套用旋轉的效果 */
+    animation-duration: ${({ isLoading }) => (isLoading ? '1.5s' : '0s')};
   }
 `;
 
@@ -168,12 +185,19 @@ function App() {
     temperature: '22.9',
     windSpeed: '1.1',
     rainPossibility: '48,3',
-    observationTime: '2020-12-12 22:10:00'
+    observationTime: '2020-12-12 22:10:00',
+    isLoading: true,
   });
 
 
   //STEP 2 : 將 AUTHORIZATION_KEY 和 LOCATION_NAME 帶入 API 請求中
   const fetchCurrentWeather = () => {
+
+    setCurrentWeather((prevState) => ({
+      ...prevState,
+      isLoading: true,
+    }));
+
     fetch(
       `https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}`
 
@@ -202,7 +226,8 @@ function App() {
           temperature: weatherElements.TEMP,
           windSpeed: weatherElements.WDSD,
           rainPossibility: '48,3',
-          observationTime: locationData.time.obsTime
+          observationTime: locationData.time.obsTime,
+          isLoading: false,
         });
       });
   }
@@ -217,41 +242,54 @@ function App() {
     // useEffect 中加入 console.log
     console.log('execute function in useEffect');
     fetchCurrentWeather();
-  },[]);
+  }, []);
+
+  const {
+    locationName,
+    description,
+    temperature,
+    windSpeed,
+    rainPossibility,
+    observationTime,
+    isLoading,
+  } = currentWeather;
 
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       {/* <button onClick={a}> click</button> */}
       <Container>
         {/* JSX 中加入 console.log */}
-        {console.log('render')};
+        {console.log('render, isLoading:', isLoading)};
+
         <WeatherCard>
-          <Location>{currentWeather.locationName}</Location>
-          <Description>{currentWeather.description}</Description>
+          <Location>{locationName}</Location>
+          <Description>{description}</Description>
           <CurrentWeather>
             <Temperature>
-              {Math.round(currentWeather.temperature)}<Celsius>°C</Celsius>
+              {Math.round(temperature)}<Celsius>°C</Celsius>
             </Temperature>
             <DayCloudy />
           </CurrentWeather>
           <AirFlow>
-            <AirFlowIcon />{currentWeather.windSpeed} m/h
+            <AirFlowIcon />{windSpeed} m/h
           </AirFlow>
           <Rain>
-            <RainIcon />{currentWeather.rainPossibility}%
+            <RainIcon />{rainPossibility}%
           </Rain>
           {/* STEP 3 : 綁定 onClick 時會呼叫的 handleClick 方法 */}
-          <Refresh onClick={fetchCurrentWeather}>
+          <Refresh onClick={fetchCurrentWeather}
+            isLoading={isLoading}>
             最後觀測時間：
 
             {new Intl.DateTimeFormat('zh-TW', {
               hour: 'numeric',
               minute: 'numeric',
-            }).format(dayjs(currentWeather.observationTime))}
+            }).format(dayjs(observationTime))}
 
             {''}
 
-            <RefreshIcon />
+            {isLoading ? <LoadingIcon /> : <RefreshIcon />}
+
           </Refresh>
         </WeatherCard>
       </Container >
