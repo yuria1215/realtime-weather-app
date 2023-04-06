@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 // STEP 1 : 載入 emotion 的 styled 套件
 import styled from '@emotion/styled';
 
@@ -156,6 +156,9 @@ const AUTHORIZATION_KEY = 'CWB-47EA4267-8CFE-4100-B086-B09835724C3F';
 const LOCATION_NAME = '臺北'; //STEP 1 : 定義LOCATION_NAME
 
 function App() {
+  // 元件一開始加入 console.log
+  console.log('invoke function component');
+
   const [currentTheme, setCurrentTheme] = useState('dark');
 
   // 定義會使用到的資料狀態
@@ -170,7 +173,7 @@ function App() {
 
 
   //STEP 2 : 將 AUTHORIZATION_KEY 和 LOCATION_NAME 帶入 API 請求中
-  const handleClick = () => {
+  const fetchCurrentWeather = () => {
     fetch(
       `https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}`
 
@@ -205,14 +208,23 @@ function App() {
   }
 
 
-
   // function a (){
   //   setCurrentTheme('light')
   // }
+
+  // 加入 useEffect 方法，參數是需要放入函式
+  useEffect(() => {
+    // useEffect 中加入 console.log
+    console.log('execute function in useEffect');
+    fetchCurrentWeather();
+  },[]);
+
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       {/* <button onClick={a}> click</button> */}
       <Container>
+        {/* JSX 中加入 console.log */}
+        {console.log('render')};
         <WeatherCard>
           <Location>{currentWeather.locationName}</Location>
           <Description>{currentWeather.description}</Description>
@@ -229,7 +241,7 @@ function App() {
             <RainIcon />{currentWeather.rainPossibility}%
           </Rain>
           {/* STEP 3 : 綁定 onClick 時會呼叫的 handleClick 方法 */}
-          <Refresh onClick={handleClick}>
+          <Refresh onClick={fetchCurrentWeather}>
             最後觀測時間：
 
             {new Intl.DateTimeFormat('zh-TW', {
