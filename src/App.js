@@ -245,7 +245,7 @@ function App() {
     )
       .then((response) => response.json())
       .then((data) => {
-        // 取出某縣市的預報資料
+        // 取出某縣市的預報資料 
         const locationData = data.records.location[0];
 
         const weatherElements = locationData.weatherElement.reduce(
