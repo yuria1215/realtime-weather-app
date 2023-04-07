@@ -195,23 +195,13 @@ function App() {
 
   //STEP 2 : 將 AUTHORIZATION_KEY 和 LOCATION_NAME 帶入 API 請求中
   const fetchCurrentWeather = () => {
-
-    setWeatherElement((prevState) => ({
-      ...prevState,
-      isLoading: true,
-    }));
-
-    fetch(
+    return fetch(
       `https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}`
-
     )
       .then((response) => response.json())
       .then((data) => {
-        console.log('data', data);
-        // STEP 1：定義 `locationData` 把回傳的資料中會用到的部分取出來
-        const locationData = data.records.location[0]
+        const locationData = data.records.location[0];
 
-        // STEP 2：將風速（WDSD）和氣溫（TEMP）的資料取出
         const weatherElements = locationData.weatherElement.reduce(
           (neededElements, item) => {
             if (['WDSD', 'TEMP'].includes(item.elementName)) {
@@ -222,25 +212,21 @@ function App() {
           {}
         );
 
-        // STEP 3：要使用到 React 組件中的資料
-        setWeatherElement((prevState) => ({
-          ...prevState,
+        return {
+          observationTime: locationData.time.obsTime,
           locationName: locationData.locationName,
-          // description: '多雲時晴',
           temperature: weatherElements.TEMP,
           windSpeed: weatherElements.WDSD,
-          // rainPossibility: '48,3',
-          observationTime: locationData.time.obsTime,
-          isLoading: false,
-        }));
+        };
       });
-  }
+  };
 
 
   const LOCATION_NAME_FORECAST = '臺北市';
 
+  // 留意這裡加上 return 直接打 fetch API 回傳的 Promise 再回傳出去
   const fetchWeatherForecast = () => {
-    fetch(
+    return fetch(
       `https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME_FORECAST}`
     )
       .then((response) => response.json())
@@ -259,14 +245,22 @@ function App() {
           },
           {}
         );
-        // 要使用到 React 組件中的資料
-        setWeatherElement((prevState) => ({
-          ...prevState,
+        // 把取得的資料回傳出去，而不是在這裡 setWeatherElement
+        return {
           description: weatherElements.Wx.parameterName,
           weatherCode: weatherElements.Wx.parameterValue,
           rainPossibility: weatherElements.PoP.parameterName,
           comfortability: weatherElements.CI.parameterName,
-        }));
+        };
+
+        // 要使用到 React 組件中的資料
+        // setWeatherElement((prevState) => ({
+        //   ...prevState,
+        //   description: weatherElements.Wx.parameterName,
+        //   weatherCode: weatherElements.Wx.parameterValue,
+        //   rainPossibility: weatherElements.PoP.parameterName,
+        //   comfortability: weatherElements.CI.parameterName,
+        // }));
       });
   }
 
@@ -275,13 +269,34 @@ function App() {
   // function a (){
   //   setCurrentTheme('light')
   // }
+  const fetchData = async () => {
+    setWeatherElement((prevState) => ({
+      ...prevState,
+      isLoading: true,
+    }));
 
+    //STEP 2 : 使用  Promise.all 搭配 await 等待兩個 API 都取得回應後才繼續
+    const [currentWeather, weatherForecast] = await Promise.all
+      ([fetchCurrentWeather(),
+      fetchWeatherForecast()
+      ]);
+
+    // 把取得的資料透過物件的解構賦值放入
+    setWeatherElement({
+      ...currentWeather,
+      ...weatherForecast,
+      isLoading: false,
+    })
+
+  };
   // 加入 useEffect 方法，參數是需要放入函式
   useEffect(() => {
-    // useEffect 中加入 console.log
-    console.log('execute function in useEffect');
-    fetchCurrentWeather();
-    fetchWeatherForecast();
+    // STEP 1 : 在 useEffect 中定義 async function 取名為 fetchData
+
+    console.log('execute function in useEffect')
+
+    // STEP 4 : 再 useEffect 中呼叫 fetchData 方法
+    fetchData();
   }, []);
 
   const {
@@ -320,10 +335,7 @@ function App() {
             <RainIcon />{rainPossibility}%
           </Rain>
           {/* STEP 3 : 綁定 onClick 時會呼叫的 handleClick 方法 */}
-          <Refresh onClick={() => {
-            fetchCurrentWeather();
-            fetchWeatherForecast();
-          }}
+          <Refresh onClick={fetchData}
             isLoading={isLoading}>
             最後觀測時間：
 
