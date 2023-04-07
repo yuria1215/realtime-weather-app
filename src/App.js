@@ -287,7 +287,6 @@ function App() {
       ...weatherForecast,
       isLoading: false,
     })
-
   };
   // 加入 useEffect 方法，參數是需要放入函式
   useEffect(() => {
