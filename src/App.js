@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 // STEP 1 : 載入 emotion 的 styled 套件
 import styled from '@emotion/styled';
 
@@ -269,7 +269,7 @@ function App() {
   // function a (){
   //   setCurrentTheme('light')
   // }
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setWeatherElement((prevState) => ({
       ...prevState,
       isLoading: true,
@@ -287,7 +287,7 @@ function App() {
       ...weatherForecast,
       isLoading: false,
     })
-  };
+  }, []);
   // 加入 useEffect 方法，參數是需要放入函式
   useEffect(() => {
     // STEP 1 : 在 useEffect 中定義 async function 取名為 fetchData
@@ -296,7 +296,7 @@ function App() {
 
     // STEP 4 : 再 useEffect 中呼叫 fetchData 方法
     fetchData();
-  }, []);
+  }, [useCallback]);
 
   const {
     locationName,
