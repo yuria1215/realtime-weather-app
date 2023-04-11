@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { ThemeProvider } from '@emotion/react';
 
 import WeatherCard from './views/WeatherCard';
+import WeatherSetting from './views/WeatherSetting';
 import { getMoment } from './utils/helpers';
 import useWeatherAPI from './hooks/useWeatherAPI';
 
@@ -72,6 +73,11 @@ function App() {
     authorizationKey: AUTHORIZATION_KEY,
   });
 
+  const [currentPage, setCurrentPage] = useState('WeatherCard');
+  const handleCurrentPageChange = (currentPage) => {
+    setCurrentPage(currentPage)
+  };
+
   const [currentTheme, setCurrentTheme] = useState('light');
 
 
@@ -87,14 +93,18 @@ function App() {
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
 
-        <WeatherCard
-          weatherElement={weatherElement}
-          moment={moment}
-          fetchData={fetchData}
-        />
+        {currentPage === 'WeatherCard' && (
+          <WeatherCard
+            weatherElement={weatherElement}
+            moment={moment}
+            fetchData={fetchData}
+            handleCurrentPageChange={handleCurrentPageChange}
+          />
+        )}
+        {currentPage === 'WeatherSetting' && <WeatherSetting handleCurrentPageChange={handleCurrentPageChange} />}
 
       </Container >
-    </ThemeProvider>
+    </ThemeProvider >
   );
 }
 
