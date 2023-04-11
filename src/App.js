@@ -5,7 +5,7 @@ import { ThemeProvider } from '@emotion/react';
 
 import WeatherCard from './views/WeatherCard';
 import WeatherSetting from './views/WeatherSetting';
-import { getMoment } from './utils/helpers';
+import { findLocation, getMoment } from './utils/helpers';
 import useWeatherAPI from './hooks/useWeatherAPI';
 
 
@@ -61,51 +61,62 @@ const Container = styled.div`
 
 
 const AUTHORIZATION_KEY = 'CWB-47EA4267-8CFE-4100-B086-B09835724C3F';
-const LOCATION_NAME = '臺北'; //STEP 1 : 定義LOCATION_NAME
-const LOCATION_NAME_FORECAST = '臺北市';
+// const LOCATION_NAME = '臺北'; //STEP 1 : 定義LOCATION_NAME
+// const LOCATION_NAME_FORECAST = '臺北市';
 
 
 
-function App() {
-  const [weatherElement, fetchData] = useWeatherAPI({
-    locationName: LOCATION_NAME,
-    cityName: LOCATION_NAME_FORECAST,
-    authorizationKey: AUTHORIZATION_KEY,
-  });
-
+const App = () => {
+  const [currentCity, setCurrentCity] = useState('臺北市');
   const [currentPage, setCurrentPage] = useState('WeatherCard');
-  const handleCurrentPageChange = (currentPage) => {
-    setCurrentPage(currentPage)
-  };
-
   const [currentTheme, setCurrentTheme] = useState('light');
 
+  const handleCurrentPageChange = (currentPage) => {
+    setCurrentPage(currentPage);
+  };
 
-  // TODO: 等使用者可以修改地區時要修改裡面的參數
-  const moment = useMemo(() => getMoment(LOCATION_NAME_FORECAST), []);
+  const handleCurrentCityChange = (currentCity) => {
+    setCurrentCity(currentCity);
+  };
+
+  const currentLocation = useMemo(() => findLocation(currentCity), [
+    currentCity,
+  ]);
+  const { cityName, locationName, sunriseCityName } = currentLocation;
+  const moment = useMemo(() => getMoment(sunriseCityName), [sunriseCityName]);
+  const [weatherElement, fetchData] = useWeatherAPI({
+    locationName,
+    cityName,
+    authorizationKey: AUTHORIZATION_KEY,
+  });
 
   useEffect(() => {
     setCurrentTheme(moment === 'day' ? 'light' : 'dark');
   }, [moment]);
 
-
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
-
         {currentPage === 'WeatherCard' && (
           <WeatherCard
+            cityName={cityName}
             weatherElement={weatherElement}
             moment={moment}
             fetchData={fetchData}
             handleCurrentPageChange={handleCurrentPageChange}
           />
         )}
-        {currentPage === 'WeatherSetting' && <WeatherSetting handleCurrentPageChange={handleCurrentPageChange} />}
 
-      </Container >
-    </ThemeProvider >
+        {currentPage === 'WeatherSetting' && (
+          <WeatherSetting
+            cityName={cityName}
+            handleCurrentCityChange={handleCurrentCityChange}
+            handleCurrentPageChange={handleCurrentPageChange}
+          />
+        )}
+      </Container>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;

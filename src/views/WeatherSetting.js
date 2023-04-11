@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState  } from 'react';
 import styled from '@emotion/styled';
 import { availableLocations } from './../utils/helpers';
 
@@ -90,13 +90,30 @@ const Save = styled.button`
   }
 `;
 
-const WeatherSetting = ({handleCurrentPageChange}) => {
+const WeatherSetting = ({ cityName, handleCurrentCityChange, handleCurrentPageChange }) => {
+    const [locationName, setLocationName] = useState(cityName);
+
+    const handleChange = (e) => {
+        setLocationName(e.target.value);
+    };
+
+    const handleSave = () => {
+        console.log(`儲存的地區資訊為：${locationName}`);
+        handleCurrentCityChange(locationName);
+        handleCurrentPageChange('WeatherCard');
+    };
+
     return (
         <WeatherSettingWrapper>
             <Title>設定</Title>
             <StyledLabel htmlFor="location">地區</StyledLabel>
 
-            <StyledSelect id="location" name="location">
+            <StyledSelect
+                id="location"
+                name="location"
+                onChange={handleChange}
+                value={locationName}
+            >
                 {availableLocations.map(({ cityName }) => (
                     <option value={cityName} key={cityName}>
                         {cityName}
@@ -105,8 +122,8 @@ const WeatherSetting = ({handleCurrentPageChange}) => {
             </StyledSelect>
 
             <ButtonGroup>
-                <Back onClick={()=>handleCurrentPageChange('WeatherCard')}>返回</Back>
-                <Save>儲存</Save>
+                <Back onClick={() => handleCurrentPageChange('WeatherCard')}>返回</Back>
+                <Save onClick={handleSave}>儲存</Save>
             </ButtonGroup>
         </WeatherSettingWrapper>
     );
